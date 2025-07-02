@@ -2,7 +2,6 @@
 # https://huggingface.co/facebook/nllb-200-distilled-600M
 # https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5
 # http://127.0.0.1:8000/generate-video
-# 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
 
 import os
 import torch
