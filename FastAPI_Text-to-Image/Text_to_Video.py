@@ -2,7 +2,7 @@
 # https://huggingface.co/facebook/nllb-200-distilled-600M
 # https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5
 # http://127.0.0.1:8000/generate-video
-# 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
+
 
 import os
 import torch
@@ -57,7 +57,7 @@ def generate_video(request: PromptRequest):
                  num_frames = 17,
                  guidance_scale=5
                 ).frames[0]
-    export_to_video(output_video_path = "outputs(video)/output.mp4", fps=8)
+    export_to_video( video_frames= "outputs(video)/output.mp4", fps=8)
     output_path = "outputs(video)/output.mp4"
     video.save(output_path)
     return {"message":"OK", "file_path": output_path}
