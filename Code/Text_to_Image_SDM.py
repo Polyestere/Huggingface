@@ -3,6 +3,7 @@
 # https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5
 # http://127.0.0.1:8000/generate-image
 
+
 from fastapi import FastAPI
 from diffusers import StableDiffusion3Pipeline
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
@@ -24,12 +25,22 @@ os.makedirs("outputs(image)", exist_ok=True)
 
 #번역 모델(한국어 프롬프트 영어 번역)
 def translate(prompt):
-    model_name = "Helsinki-NLP/opus-mt-tc-big-ko-en"
+    model_name = "facebook/nllb-200-distilled-1.3B"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
     
-    inputs = tokenizer(prompt, return_tensors="pt")
-    translated = model.generate(**inputs)
+    # NLLB 모델 사용법 - 언어 토큰을 직접 추가
+    tokenizer.src_lang = "kor_Hang"
+    encoded = tokenizer(prompt, return_tensors="pt")
+    
+    # 타겟 언어 토큰 ID 가져오기
+    target_lang_token = tokenizer.convert_tokens_to_ids("eng_Latn")
+    
+    translated = model.generate(
+        **encoded,
+        forced_bos_token_id=target_lang_token,
+        max_length=512
+    )
     translated_prompt = tokenizer.decode(translated[0], skip_special_tokens=True)
     print(translated_prompt)
     return translated_prompt
@@ -47,9 +58,11 @@ def generate_image(request: PromptRequest):
                  height=480,
                  width=640, 
                  num_inference_steps = 60, 
-                 cfg_scale = 4,
-                 sampler = "Euler"
+                 guidance_scale = 4,
                 ).images[0]
     output_path = "outputs(image)/result.png"
     image.save(output_path)
     return {"message":"OK", "file_path": output_path}
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)
