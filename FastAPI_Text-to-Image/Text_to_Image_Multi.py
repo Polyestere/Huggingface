@@ -5,7 +5,6 @@ from pydantic import BaseModel
 from Translate import translate, init_translation_model
 import os
 import asyncio
-from collections import defaultdict
 import time
 
 os.makedirs("outputs", exist_ok=True)
@@ -48,10 +47,6 @@ async def generate_image(request: ImageRequest):
     print(f"[GENERATION] Original prompt: {request.prompt}")
 
     translated_prompt = translate(request.prompt)
-    print(f"[GENERATION] Translated prompt: {translated_prompt}")
-
-    from ModelLoad import model_load
-    pipe = model_load(request.model_name)
 
     generation_params = get_generation_params(
         request.model_name, 
@@ -84,4 +79,5 @@ if __name__ == "__main__":
         host="127.0.0.1", 
         port=8000,
         timeout_keep_alive=300,
+        reload = True
     )
