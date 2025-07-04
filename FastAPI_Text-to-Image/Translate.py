@@ -4,6 +4,7 @@ import torch
 import gc
 import copy
 
+
 def init_translation_model():
     if shared.translation_model is None:
         model_name = "facebook/nllb-200-distilled-1.3B"
@@ -11,16 +12,20 @@ def init_translation_model():
         shared.translation_model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
         print("Translation model loaded")
 
+
 def translate(prompt):
     tokenizer = shared.translation_tokenizer
     model = shared.translation_model
 
+
     fresh_tokenizer = copy.deepcopy(tokenizer)
     fresh_tokenizer.src_lang = "kor_Hang"
+
 
     if not prompt or not prompt.strip():
         print("[TRANSLATE] Empty prompt, returning empty string")
         return ""
+
 
     inputs = fresh_tokenizer(
         prompt.strip(),
@@ -31,10 +36,12 @@ def translate(prompt):
         add_special_tokens=True
     )
 
+
     target_lang_token = "eng_Latn"
     forced_bos_token_id = fresh_tokenizer.convert_tokens_to_ids(target_lang_token)
     if forced_bos_token_id is None:
         forced_bos_token_id = 2
+
 
     model.eval()
     with torch.no_grad():
@@ -54,15 +61,18 @@ def translate(prompt):
             length_penalty=1.0
         )
 
+
     translated_text = fresh_tokenizer.decode(
         outputs[0],
         skip_special_tokens=True,
         clean_up_tokenization_spaces=True
     ).strip()
 
+
     del inputs, outputs, fresh_tokenizer
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
+
 
     return translated_text if translated_text else prompt
