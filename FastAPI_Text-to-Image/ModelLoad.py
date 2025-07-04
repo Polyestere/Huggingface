@@ -37,7 +37,7 @@ def model_load(model_name: str):
             )
         elif model_name == "SD_1.5":
             pipe = StableDiffusionPipeline.from_pretrained(
-                "runwayml/stable-diffusion-v1-5",
+                "stable-diffusion-v1-5/stable-diffusion-v1-5",
                 torch_dtype=torch.float16,
                 use_safetensors=True
                 # variant="fp16" 제거 - 안정성 우선
