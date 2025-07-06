@@ -67,29 +67,3 @@
 - **비동기 처리**: FastAPI와 Python의 비동기 기능을 활용하여 여러 요청을 효율적으로 처리
 
 
-## 9. 기술 스택
-
-- **FastAPI**: API 서버 및 비동기 처리
-- **PyTorch, diffusers**: 이미지 생성 모델 파이프라인
-- **Transformers**: 번역 모델(NLLB-200) 활용
-- **Python 표준 라이브러리**: 비동기, 파일 관리 등
-
-
-## 10. 참고 사항
-
-- **이미지 반환**: 현재는 이미지 파일 경로만 반환하며, 실제 파일 반환이 필요하다면 별도의 GET 엔드포인트 추가 필요
-- **모델 및 번역 객체 공유**: `shared.py`를 통해 여러 모듈에서 효율적으로 공유
-- **코드 구조**: 실제 서비스 흐름과 일치하도록 설계됨
-
-<div style="text-align: center">⁂</div>
-
-[^1]: Translate.py
-
-[^2]: Text_to_Image_Multi.py
-
-[^3]: ModelLoad.py
-
-[^4]: KakaoTalk_20250704_172908359.jpg
-
-[^5]: KakaoTalk_20250704_172932485.jpg
-
