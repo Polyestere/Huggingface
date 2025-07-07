@@ -124,15 +124,18 @@ async def get_available_models():
         {
             "model_name": "SD_3.5M",
             "estimated_time_seconds": "60초",
+            "max_parallel_instances": MAX_SAME_MODEL_INSTANCES if PARALLEL_SAME_MODEL else 1
         },
         {
             "model_name": "SD_1.5", 
             "estimated_time_seconds": "50초",
+            "max_parallel_instances": MAX_SAME_MODEL_INSTANCES if PARALLEL_SAME_MODEL else 1
         }
     ]
     
     return {
         "available_models": models_info,
+        "parallel_same_model_enabled": PARALLEL_SAME_MODEL
     }
 
 async def process_generation_request(request: ImageRequest, task_id: str):
