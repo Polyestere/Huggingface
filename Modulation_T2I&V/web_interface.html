@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 이미지/비디오 생성기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .model-info {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .model-info h4 {
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+
+        .model-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .model-card h5 {
+            color: #333;
+            margin: 0;
+        }
+
+        .model-card .time {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .results {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .result-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .result-item img, .result-item video {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .result-item .download-btn {
+            background: #28a745;
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: #dc3545;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>🎨 AI 이미지 & 비디오 생성기</h1>
+            <p>모델과 프롬프트만으로 간단하게 생성하세요</p>
+        </div>
+
+        <div class="main-content">
+            <!-- 탭 메뉴 -->
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('image')">🖼️ 이미지 생성</button>
+                <button class="tab" onclick="showTab('video')">🎬 비디오 생성</button>
+            </div>
+
+            <!-- 이미지 생성 탭 -->
+            <div id="imageTab" class="tab-content active">
+                <div class="model-info">
+                    <h4>📋 사용 가능한 이미지 모델</h4>
+                    <div id="imageModels">로딩 중...</div>
+                </div>
+
+                <form id="imageForm">
+                    <div class="form-group">
+                        <label for="imageModel">모델 선택</label>
+                        <select id="imageModel" name="model_name" required>
+                            <option value="">모델을 선택하세요</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="imagePrompt">프롬프트 (한국어 또는 영어)</label>
+                        <textarea id="imagePrompt" name="prompt" placeholder="생성하고 싶은 이미지를 설명하세요..." required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn" id="imageSubmitBtn">
+                        🎨 이미지 생성하기
+                    </button>
+                </form>
+
+                <div id="imageStatus" class="status"></div>
+            </div>
+
+            <!-- 비디오 생성 탭 -->
+            <div id="videoTab" class="tab-content">
+                <div class="model-info">
+                    <h4>📋 사용 가능한 비디오 모델</h4>
+                    <div id="videoModels">로딩 중...</div>
+                </div>
+
+                <form id="videoForm">
+                    <div class="form-group">
+                        <label for="videoModel">모델 선택</label>
+                        <select id="videoModel" name="model_name" required>
+                            <option value="">모델을 선택하세요</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="videoPrompt">프롬프트 (한국어 또는 영어)</label>
+                        <textarea id="videoPrompt" name="prompt" placeholder="생성하고 싶은 비디오를 설명하세요..." required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn" id="videoSubmitBtn">
+                        🎬 비디오 생성하기
+                    </button>
+                </form>
+
+                <div id="videoStatus" class="status"></div>
+            </div>
+
+            <!-- 결과 표시 영역 -->
+            <div id="results" class="results"></div>
+        </div>
+    </div>
+
+    <script>
+    const API_BASE = 'http://127.0.0.1:8000';
+    
+    // 모델 정보 캐시
+    let imageModelsCache = null;
+    let videoModelsCache = null;
+    let modelsLoaded = false;
+    
+    // 탭 전환 함수 (수정됨)
+    function showTab(tabName) {
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        event.target.classList.add('active');
+        document.getElementById(tabName + 'Tab').classList.add('active');
+        
+        // 탭 전환 시 상태 메시지와 결과물 완전히 제거
+        document.getElementById('imageStatus').style.display = 'none';
+        document.getElementById('videoStatus').style.display = 'none';
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = '';
+    }
+
+    // 결과물 제거 함수
+    function clearResults() {
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = '';
+        document.getElementById('imageStatus').style.display = 'none';
+        document.getElementById('videoStatus').style.display = 'none';
+    }
+
+    // 이미지 모델 정보 로드 (캐싱 적용)
+    async function loadImageModels() {
+        // 이미 로드된 경우 캐시 사용
+        if (imageModelsCache) {
+            displayImageModels(imageModelsCache);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE}/image-models`);
+            const data = await response.json();
+            
+            // 캐시에 저장
+            imageModelsCache = data;
+            displayImageModels(data);
+            
+        } catch (error) {
+            console.error('이미지 모델 정보 로드 실패:', error);
+            document.getElementById('imageModels').innerHTML = '<p style="color: red;">모델 정보를 불러올 수 없습니다.</p>';
+        }
+    }
+
+    // 이미지 모델 정보 표시
+    function displayImageModels(data) {
+        const imageModelsDiv = document.getElementById('imageModels');
+        const imageModelSelect = document.getElementById('imageModel');
+        
+        // 기존 옵션 제거 (첫 번째 옵션은 유지)
+        while (imageModelSelect.children.length > 1) {
+            imageModelSelect.removeChild(imageModelSelect.lastChild);
+        }
+        
+        // 모델 정보 표시
+        imageModelsDiv.innerHTML = data.available_models.map(model => 
+            `<div class="model-card">
+                <h5>${model.model_name}</h5>
+                <span class="time">${model.estimated_time}</span>
+            </div>`
+        ).join('');
+        
+        // 드롭다운 옵션 추가
+        data.available_models.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.model_name;
+            option.textContent = `${model.model_name} (${model.estimated_time})`;
+            imageModelSelect.appendChild(option);
+        });
+    }
+
+    // 비디오 모델 정보 로드 (캐싱 적용)
+    async function loadVideoModels() {
+        // 이미 로드된 경우 캐시 사용
+        if (videoModelsCache) {
+            displayVideoModels(videoModelsCache);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE}/video-models`);
+            const data = await response.json();
+            
+            // 캐시에 저장
+            videoModelsCache = data;
+            displayVideoModels(data);
+            
+        } catch (error) {
+            console.error('비디오 모델 정보 로드 실패:', error);
+            document.getElementById('videoModels').innerHTML = '<p style="color: red;">모델 정보를 불러올 수 없습니다.</p>';
+        }
+    }
+
+    // 비디오 모델 정보 표시
+    function displayVideoModels(data) {
+        const videoModelsDiv = document.getElementById('videoModels');
+        const videoModelSelect = document.getElementById('videoModel');
+        
+        // 기존 옵션 제거 (첫 번째 옵션은 유지)
+        while (videoModelSelect.children.length > 1) {
+            videoModelSelect.removeChild(videoModelSelect.lastChild);
+        }
+        
+        // 모델 정보 표시
+        videoModelsDiv.innerHTML = data.available_models.map(model => 
+            `<div class="model-card">
+                <h5>${model.model_name}</h5>
+                <span class="time">${model.estimated_time}</span>
+            </div>`
+        ).join('');
+        
+        // 드롭다운 옵션 추가
+        data.available_models.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.model_name;
+            option.textContent = `${model.model_name} (${model.estimated_time})`;
+            videoModelSelect.appendChild(option);
+        });
+    }
+
+    // 상태 메시지 표시
+    function showStatus(elementId, message, type) {
+        const statusElement = document.getElementById(elementId);
+        statusElement.textContent = message;
+        statusElement.className = `status ${type}`;
+        statusElement.style.display = 'block';
+    }
+
+    // 결과 표시
+    function showResult(imagePath, type = 'image', modelName = '') {
+        const resultsDiv = document.getElementById('results');
+        const resultItem = document.createElement('div');
+        resultItem.className = 'result-item';
+        
+        const filename = imagePath.split('/').pop();
+        const downloadUrl = `${API_BASE}/download/${filename}`;
+        
+        let mediaElement;
+        if (type === 'video' && filename.endsWith('.mp4')) {
+            mediaElement = `<video controls style="max-width: 100%;">
+                <source src="${downloadUrl}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>`;
+        } else if (type === 'video' && filename.endsWith('.gif')) {
+            mediaElement = `<img src="${downloadUrl}" alt="Generated Video" style="max-width: 100%;">`;
+        } else {
+            mediaElement = `<img src="${downloadUrl}" alt="Generated Image" style="max-width: 100%;">`;
+        }
+        
+        resultItem.innerHTML = `
+            ${mediaElement}
+            <p><strong>모델:</strong> ${modelName}</p>
+            <p><strong>타입:</strong> ${type === 'video' ? '비디오 (MP4)' : '이미지'}</p>
+            <p><strong>파일명:</strong> ${filename}</p>
+            <a href="${downloadUrl}" class="download-btn" download>다운로드</a>
+        `;
+        
+        resultsDiv.insertBefore(resultItem, resultsDiv.firstChild);
+    }
+
+    // 이미지 생성 폼 처리
+    document.getElementById('imageForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        clearResults();
+        
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        
+        const submitBtn = document.getElementById('imageSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="loading-spinner"></span>이미지 생성 중...';
+        
+        showStatus('imageStatus', '이미지 생성을 시작합니다...', 'loading');
+        
+        try {
+            const response = await fetch(`${API_BASE}/generate-image`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    model_name: data.model_name,
+                    prompt: data.prompt
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.message === 'OK') {
+                showStatus('imageStatus', '이미지 생성이 완료되었습니다!', 'success');
+                showResult(result.image_path, 'image', data.model_name);
+            } else {
+                showStatus('imageStatus', `오류: ${result.error}`, 'error');
+            }
+        } catch (error) {
+            showStatus('imageStatus', `네트워크 오류: ${error.message}`, 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '🎨 이미지 생성하기';
+        }
+    });
+
+    // 비디오 생성 폼 처리
+    document.getElementById('videoForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        clearResults();
+        
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        
+        const submitBtn = document.getElementById('videoSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="loading-spinner"></span>비디오 생성 중...';
+        
+        showStatus('videoStatus', '비디오 생성을 시작합니다...', 'loading');
+        
+        try {
+            const response = await fetch(`${API_BASE}/generate-video`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    model_name: data.model_name,
+                    prompt: data.prompt
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.message === 'OK') {
+                showStatus('videoStatus', '비디오 생성이 완료되었습니다!', 'success');
+                showResult(result.image_path, 'video', data.model_name);
+            } else {
+                showStatus('videoStatus', `오류: ${result.error}`, 'error');
+            }
+        } catch (error) {
+            showStatus('videoStatus', `네트워크 오류: ${error.message}`, 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '🎬 비디오 생성하기';
+        }
+    });
+
+    // 초기화 (한 번만 실행)
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!modelsLoaded) {
+            loadImageModels();
+            loadVideoModels();
+            modelsLoaded = true;
+        }
+    });
+</script>
+</body>
+</html>

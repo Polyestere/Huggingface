@@ -2,6 +2,7 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import shared
 import torch
 import gc
+import copy
 
 def init_translation_model():
     if shared.translation_model is None:
@@ -13,13 +14,16 @@ def init_translation_model():
 def translate(prompt):
     tokenizer = shared.translation_tokenizer
     model = shared.translation_model
+    
     orig_src_lang = getattr(tokenizer, 'src_lang', None)
     tokenizer.src_lang = "kor_Hang"
+    
     if not prompt or not prompt.strip():
         print("[TRANSLATE] Empty prompt, returning empty string")
         if orig_src_lang is not None:
             tokenizer.src_lang = orig_src_lang
         return ""
+    
     inputs = tokenizer(
         prompt.strip(),
         return_tensors="pt",
@@ -28,10 +32,13 @@ def translate(prompt):
         padding=True,
         add_special_tokens=True
     )
+    
     target_lang_token = "eng_Latn"
     forced_bos_token_id = tokenizer.convert_tokens_to_ids(target_lang_token)
     if forced_bos_token_id is None:
         forced_bos_token_id = 2
+    
+    # 항상 CPU에서 추론
     model.eval()
     with torch.no_grad():
         outputs = model.generate(
@@ -49,11 +56,14 @@ def translate(prompt):
             repetition_penalty=1.0,
             length_penalty=1.0
         )
-        translated_text = tokenizer.decode(
-            outputs[0],
-            skip_special_tokens=True,
-            clean_up_tokenization_spaces=True
-        ).strip()
+    
+    translated_text = tokenizer.decode(
+        outputs[0],
+        skip_special_tokens=True,
+        clean_up_tokenization_spaces=True
+    ).strip()
+    
     if orig_src_lang is not None:
         tokenizer.src_lang = orig_src_lang
+    
     return translated_text if translated_text else prompt
